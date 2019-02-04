@@ -10,11 +10,11 @@ use parity_codec::Encode;
 
 #[derive(Encode, Decode, Default, Clone, PartialEq)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
-pub struct Bucket<Hash, Balance, AccountId> {
+pub struct Bucket<Hash, Balance, AccountId, BlockNumber> {
 	// id: AccountId,
 	id: Hash,
 
-	promise: Option<Promise<Hash, Balance, AccountId>>,
+	promise: Option<Promise<Hash, Balance, AccountId, BlockNumber>>,
 
 	/// price for selling the bucket
 	price: Balance,
@@ -23,7 +23,7 @@ pub struct Bucket<Hash, Balance, AccountId> {
 /// Describes an accepted promise
 #[derive(Encode, Decode, Default, Clone, PartialEq)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
-pub struct Promise<Hash, Balance, AccountId> {
+pub struct Promise<Hash, Balance, AccountId, BlockNumber> {
 	id: Hash,
 
 	/// initial author of `this` promise
@@ -34,23 +34,25 @@ pub struct Promise<Hash, Balance, AccountId> {
 	/// promised value to fullfill
 	value: Balance,
 	/// time (number of blocks)
-	period: u64,
+	period: BlockNumber,
+	// period: u64,
 
 	/// filled value for current period
 	filled: Balance,
 	/// time (in blocks) when current period was started
-	period_start: u64,
+	acception_dt: BlockNumber,
 }
 
 /// Describes not accepted "free promise"
 #[derive(Encode, Decode, Default, Clone, PartialEq)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
-pub struct FreePromise<Hash, Balance> {
+pub struct FreePromise<Hash, Balance, BlockNumber> {
 	id: Hash,
 	/// promised value to fullfill
 	value: Balance,
 	/// time (number of blocks)
-	period: u64,
+	period: BlockNumber,
+	// period: u64,
 }
 
 // pub trait Trait: system::Trait {}
@@ -83,12 +85,14 @@ decl_event!(
 		PromiseFilled(Hash, Hash, Balance),
 		/// (bucket_id:Hash, promise_id:Hash)
 		PromiseFullilled(Hash, Hash),
+		/// (bucket_id:Hash, promise_id:Hash, missed_deposit:Balance)
+		PromiseBreached(Hash, Hash, Balance),
 	}
 );
 
 decl_storage! {
 	trait Store for Module<T: Trait> as C2FC {
-		Buckets get(bucket): map T::Hash => Bucket<T::Hash, T::Balance, T::AccountId>;
+		Buckets get(bucket): map T::Hash => Bucket<T::Hash, T::Balance, T::AccountId, T::BlockNumber>;
 		BucketOwner get(owner_of): map T::Hash => Option<T::AccountId>;
 		/// same as `AcceptedPromiseBucket` but by bucket_id
 		BucketContributor get(contributor_of): map T::Hash => Option<T::AccountId>;
@@ -103,7 +107,7 @@ decl_storage! {
 
 
 		// free promises:
-		Promises get(promise): map T::Hash => FreePromise<T::Hash, T::Balance>;
+		Promises get(promise): map T::Hash => FreePromise<T::Hash, T::Balance, T::BlockNumber>;
 		PromiseOwner get(owner_of_promise): map T::Hash => Option<T::AccountId>;
 
 		FreePromisesArray get(free_promise_by_index): map u64 => T::Hash;
@@ -151,7 +155,7 @@ decl_module! {
 			Ok(())
 		}
 
-		fn create_promise(origin, value: T::Balance, period: u64) -> Result {
+		fn create_promise(origin, value: T::Balance, period: T::BlockNumber) -> Result {
 			let sender = ensure_signed(origin)?;
 			let nonce = <Nonce<T>>::get();
 			let promise_id = (<system::Module<T>>::random_seed(), &sender, nonce).using_encoded(<T as system::Trait>::Hashing::hash);
@@ -169,7 +173,7 @@ decl_module! {
 			Ok(())
 		}
 
-		fn edit_promise(origin, promise_id: T::Hash, value: T::Balance, period: u64) -> Result {
+		fn edit_promise(origin, promise_id: T::Hash, value: T::Balance, period: T::BlockNumber) -> Result {
 			let sender = ensure_signed(origin)?;
 
 			ensure!(<Promises<T>>::exists(promise_id), "This promise does not exist");
@@ -207,8 +211,8 @@ decl_module! {
 			let mut bucket = Self::bucket(bucket_id);
 			ensure!(bucket.promise.is_none(), "Bucket already contains another promise");
 
-			// TODO: get current_block
-			let current_block = 0;
+			// get current (latest) block:
+			let current_block = <system::Module<T>>::block_number();
 
 			let free_promise = Self::promise(promise_id);
 			let promise = Promise {
@@ -217,7 +221,7 @@ decl_module! {
 				owner: promise_owner.clone(),
 				value: free_promise.value,
 				period: free_promise.period,
-				period_start: current_block,
+				acception_dt: current_block,
 				filled: <T::Balance as As<u64>>::sa(0),
 			};
 
@@ -396,20 +400,41 @@ decl_module! {
 		// }
 
 
-		// simple timer will be here //
-		// fn on_finalise(_n: T::BlockNumber) {
-		// 	// TODO: Code to execute at the end of the block.
-		// }
+		/// Check the breach of promise at end of the each block.
+		/// Simple timer here.
+		fn on_finalise(n: T::BlockNumber) {
+			let accepted_promises_count = Self::accepted_promises_count();
+
+			for i in 0..accepted_promises_count {
+				let promise_id = Self::accepted_promise_by_index(i);
+				let bucket_id = Self::bucket_by_promise(promise_id);
+
+				if <Buckets<T>>::exists(bucket_id) {
+					let bucket = Self::bucket(bucket_id);
+					// skip if bucket doesn't contains a promise
+					if let Some(promise) = &bucket.promise {
+						let lifetime = n - promise.acception_dt;
+						let wanted_deposit = promise.filled - promise.value;
+						// if (lifetime % promise.period).is_zero() && !wanted_deposit.is_zero() {
+						if (lifetime % promise.period).is_zero() && wanted_deposit > <T::Balance>::zero() {
+							// here we should to emit Event about *failed promise*.
+							Self::deposit_event(RawEvent::PromiseBreached(bucket_id, promise_id, wanted_deposit));
+							// <BucketContributor<T>>::...(bucket_id,);
+						}
+					}
+				}
+			}
+		}
 	}
 }
 
 
-// private methods & impls //
+// private & utils //
 
 use rstd::result;
 
 impl<T: Trait> Module<T> {
-	fn mint_bucket(to: T::AccountId, bucket_id: T::Hash, new_bucket: Bucket<T::Hash, T::Balance, T::AccountId>) -> Result {
+	fn mint_bucket(to: T::AccountId, bucket_id: T::Hash, new_bucket: Bucket<T::Hash, T::Balance, T::AccountId, T::BlockNumber>) -> Result {
 		ensure!(!<BucketOwner<T>>::exists(bucket_id), "Bucket already exists");
 
 		let owned_bucket_count = Self::owned_bucket_count(&to);
@@ -438,7 +463,7 @@ impl<T: Trait> Module<T> {
 		Ok(())
 	}
 
-	fn mint_promise(to: T::AccountId, promise_id: T::Hash, new_promise: FreePromise<T::Hash, T::Balance>) -> Result {
+	fn mint_promise(to: T::AccountId, promise_id: T::Hash, new_promise: FreePromise<T::Hash, T::Balance, T::BlockNumber>) -> Result {
 		ensure!(!<PromiseOwner<T>>::exists(promise_id), "Promise already exists");
 
 		let owned_promise_count = Self::owned_promise_count(&to);
