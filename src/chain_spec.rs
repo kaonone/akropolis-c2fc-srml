@@ -20,6 +20,8 @@ pub enum Alternative {
 	Development,
 	/// Whatever the current runtime is, with simple Alice/Bob auths.
 	LocalTestnet,
+	/// Custom
+	Akropolis,
 }
 
 impl Alternative {
@@ -64,11 +66,31 @@ impl Alternative {
 				None,
 				None
 			),
+
+			Alternative::Akropolis => ChainSpec::from_genesis(
+				"Akropolis",
+				"akropolis",
+				|| {
+					testnet_genesis( vec![
+							ed25519::Pair::from_seed(b"Alice                           ").public().into(),
+						], vec![
+							ed25519::Pair::from_seed(b"Alice                           ").public().0.into(),
+						],
+						ed25519::Pair::from_seed(b"Alice                           ").public().0.into(),
+					)
+				},
+				vec![],
+				None,
+				None,
+				None,
+				None,
+			),
 		})
 	}
 
 	pub(crate) fn from(s: &str) -> Option<Self> {
 		match s {
+			"akropolis" => Some(Alternative::Akropolis),
 			"dev" => Some(Alternative::Development),
 			"" | "local" => Some(Alternative::LocalTestnet),
 			_ => None,
