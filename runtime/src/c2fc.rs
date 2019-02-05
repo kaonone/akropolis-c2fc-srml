@@ -416,10 +416,14 @@ decl_module! {
 						let lifetime = n - promise.acception_dt;
 						let wanted_deposit = promise.filled - promise.value;
 						// if (lifetime % promise.period).is_zero() && !wanted_deposit.is_zero() {
-						if (lifetime % promise.period).is_zero() && wanted_deposit > <T::Balance>::zero() {
-							// here we should to emit Event about *failed promise*.
-							Self::deposit_event(RawEvent::PromiseBreached(bucket_id, promise_id, wanted_deposit));
-							// <BucketContributor<T>>::...(bucket_id,);
+						if (lifetime % promise.period).is_zero() {
+							// TODO: reset `promise.filled` to zero because new period starts.
+
+							if wanted_deposit > <T::Balance>::zero() {
+								// here we should to emit Event about *failed promise*.
+								Self::deposit_event(RawEvent::PromiseBreached(bucket_id, promise_id, wanted_deposit));
+								// <BucketContributor<T>>::...(bucket_id,);
+							}
 						}
 					}
 				}
