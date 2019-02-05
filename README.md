@@ -4,15 +4,15 @@
 
 ### 1. Setup env on server
 
-- install rust
-- install git
+- install [rust](https://rustup.rs)
+- install git, gcc, libssl-dev, clang
 
 ### 2. Clone repository
 
 ```bash
-git clone git@github.com:akropolisio/SubstrateImpl.git akropolis-c2fc
+git clone git@github.com:akropolisio/akropolis-polkadot.git akropolis-c2fc
 # or
-git clone https://github.com/akropolisio/SubstrateImpl.git akropolis-c2fc
+git clone https://github.com/akropolisio/akropolis-polkadot.git akropolis-c2fc
 ```
 
 Then build all
@@ -44,7 +44,7 @@ Login to server with already runned node.
 ./akropolis-c2fc/target/release/akropolis-c2fc build-spec --chain akropolis > chainspec.json
 ```
 
-Check field "name" in `chainspec.json` it should be equal `"Alropolis"`.
+Check field "name" in `chainspec.json` it should be equal `"Akropolis"`.
 
 ### 2. Setup env on server
 
@@ -54,9 +54,9 @@ Check field "name" in `chainspec.json` it should be equal `"Alropolis"`.
 ### 3. Clone repository
 
 ```bash
-git clone git@github.com:akropolisio/SubstrateImpl.git akropolis-c2fc
+git clone git@github.com:akropolisio/akropolis-polkadot.git akropolis-c2fc
 # or
-git clone https://github.com/akropolisio/SubstrateImpl.git akropolis-c2fc
+git clone https://github.com/akropolisio/akropolis-polkadot.git akropolis-c2fc
 ```
 
 Then build all
