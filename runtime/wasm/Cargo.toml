@@ -1,24 +1,22 @@
-[package]
-name = "akropolis-c2fc-runtime-wasm"
-version = "0.9.0"
-authors = ["Parity Technologies <admin@parity.io>"]
-
-[lib]
-name = "akropolis_c2fc_runtime"
-crate-type = ["cdylib"]
-
-[dependencies]
-akropolis-c2fc-runtime = { path = "..", default-features = false }
-
-[features]
-default = []
-std = [
-	"akropolis-c2fc-runtime/std"
-]
-
 [profile.release]
-panic = "abort"
 lto = true
+panic = 'abort'
 
 [workspace]
 members = []
+
+[lib]
+crate-type = ['cdylib']
+
+[package]
+authors = ['Parity Technologies <admin@parity.io>']
+edition = '2018'
+name = 'akropolis-c2fc-runtime-wasm'
+version = '1.0.0'
+[dependencies.akropolis-c2fc-runtime]
+default-features = false
+path = '..'
+
+[features]
+default = []
+std = ['akropolis-c2fc-runtime/std']

@@ -1,12 +1,20 @@
-#![allow(non_upper_case_globals)]
-
-use srml_support::StorageMap;
-use srml_support::StorageValue;
-use srml_support::dispatch::Result;
-// ensure_signed, ensure_root, ensure_inherent
-use system::ensure_signed;
+use support::StorageMap;
+use support::StorageValue;
+use support::dispatch::Result;
+use support::{decl_module, decl_storage, decl_event};
+use support::{ensure, fail};
+use support::traits::MakePayment;
+use system::{ensure_signed, ensure_root, ensure_inherent};
 use runtime_primitives::traits::{As, Hash, Zero};
-use parity_codec::Encode;
+
+use support::traits::{Currency, ReservableCurrency, OnDilution, OnUnbalanced, Imbalance};
+use support::traits::{LockableCurrency, LockIdentifier, WithdrawReason, WithdrawReasons};
+use runtime_io::print;
+
+#[cfg(feature = "std")]
+use serde_derive::{Serialize, Deserialize};
+use parity_codec::{Encode, Decode};
+
 
 #[derive(Encode, Decode, Default, Clone, PartialEq)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
@@ -46,17 +54,25 @@ pub struct Promise<Hash, Balance, AccountId, BlockNumber> {
 /// Describes not accepted "free promise"
 #[derive(Encode, Decode, Default, Clone, PartialEq)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
-pub struct FreePromise<Hash, Balance, BlockNumber> {
+pub struct FreePromise<Hash, Balance, /* Stake, */ BlockNumber> {
 	id: Hash,
 	/// promised value to fullfill
 	value: Balance,
 	/// time (number of blocks)
 	period: BlockNumber,
 	// period: u64,
+
+	// stake: Stake/* Balance */
 }
 
 // pub trait Trait: system::Trait {}
-pub trait Trait: balances::Trait {
+pub trait Trait: balances::Trait
+// where <<Self as Trait>::Currency as Currency<Self::AccountId>>::Balance: BalanceOf<Self::AccountId>
+{
+	// type Stake: Currency<Self::AccountId> + ReservableCurrency<Self::AccountId>;
+	type Stake: LockableCurrency<Self::AccountId>;
+	type Currency: Currency<Self::AccountId>;
+
 	type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
 }
 
@@ -127,6 +143,8 @@ decl_storage! {
 		/// returns `bucket_id` for specified `promise_id`
 		AcceptedPromiseBucket get(bucket_by_promise): map T::Hash => T::Hash;
 
+		Stake get(stake_by_promise): map T::Hash => T::Balance;
+
 		Nonce: u64;
 	}
 }
@@ -134,7 +152,6 @@ decl_storage! {
 
 decl_module! {
 	pub struct Module<T: Trait> for enum Call where origin: T::Origin {
-
 		fn deposit_event<T>() = default;
 
 		fn create_bucket(origin) -> Result {
@@ -173,6 +190,22 @@ decl_module! {
 			Ok(())
 		}
 
+		fn stake_to_promise(origin, promise_id: T::Hash, amount:T::Balance, period: T::BlockNumber) -> Result {
+			let sender = ensure_signed(origin)?;
+			// TODO: create LockIdentifier by/from promise_id
+			let lock: LockIdentifier = Default::default();
+			let until = period; // TODO: use `until` from promise
+			let reasons = WithdrawReasons::from(WithdrawReason::Reserve);
+
+			// TODO:
+			// let res = <T::Stake>::set_lock(lock, &sender, amount, until, reasons);
+			Ok(())
+		}
+
+		// TODO: fn withdraw staken
+		// TODO: fn get staken amount
+
+
 		fn edit_promise(origin, promise_id: T::Hash, value: T::Balance, period: T::BlockNumber) -> Result {
 			let sender = ensure_signed(origin)?;
 
@@ -181,11 +214,11 @@ decl_module! {
 			let owner = Self::owner_of(promise_id).ok_or("No owner for this promise")?;
 			ensure!(owner == sender, "You do not own this promise");
 
-			let mut promise = Self::promise(promise_id);
-			promise.value = value;
-			promise.period = period;
+			<Promises<T>>::mutate(promise_id, |promise|{
+				promise.value = value;
+				promise.period = period;
+			});
 
-			<Promises<T>>::insert(promise_id, promise);
 			Self::deposit_event(RawEvent::PromiseChanged(promise_id));
 
 			Ok(())
@@ -296,8 +329,7 @@ decl_module! {
 			ensure!(!bucket_price.is_zero(), "The bucket you want to buy is not for sale");
 			ensure!(bucket_price <= max_price, "The bucket you want to buy costs more than your max price");
 
-			<balances::Module<T>>::make_transfer(&sender, &owner, bucket_price)?;
-
+			Self::transfer_money(&sender, &owner, bucket_price)?;
 			Self::transfer_from(owner.clone(), sender.clone(), bucket_id)?;
 
 			bucket.price = <T::Balance as As<u64>>::sa(0);
@@ -329,7 +361,7 @@ decl_module! {
 				ensure!(!promise.value.is_zero(), "The promise in the bucket you want to fill is invalid");
 				ensure!(promise.filled <= promise.value, "The bucket you want to fill is already fullfilled");
 
-				<balances::Module<T>>::make_transfer(&sender, &owner, deposit)?;
+				Self::transfer_money(&sender, &owner, deposit)?;
 
 				promise.filled = deposit + promise.filled;
 
@@ -438,7 +470,10 @@ decl_module! {
 use rstd::result;
 
 impl<T: Trait> Module<T> {
-	fn mint_bucket(to: T::AccountId, bucket_id: T::Hash, new_bucket: Bucket<T::Hash, T::Balance, T::AccountId, T::BlockNumber>) -> Result {
+	fn mint_bucket(to: T::AccountId, bucket_id: T::Hash,
+	               new_bucket: Bucket<T::Hash, T::Balance, T::AccountId, T::BlockNumber>)
+	               -> Result
+	{
 		ensure!(!<BucketOwner<T>>::exists(bucket_id), "Bucket already exists");
 
 		let owned_bucket_count = Self::owned_bucket_count(&to);
@@ -467,7 +502,10 @@ impl<T: Trait> Module<T> {
 		Ok(())
 	}
 
-	fn mint_promise(to: T::AccountId, promise_id: T::Hash, new_promise: FreePromise<T::Hash, T::Balance, T::BlockNumber>) -> Result {
+	fn mint_promise(to: T::AccountId, promise_id: T::Hash,
+	                new_promise: FreePromise<T::Hash, T::Balance, T::BlockNumber>)
+	                -> Result
+	{
 		ensure!(!<PromiseOwner<T>>::exists(promise_id), "Promise already exists");
 
 		let owned_promise_count = Self::owned_promise_count(&to);
@@ -507,8 +545,9 @@ impl<T: Trait> Module<T> {
 		let new_owned_bucket_count_to = owned_bucket_count_to.checked_add(1)
 		                                                     .ok_or("Transfer causes overflow of 'to' bucket balance")?;
 
-		let new_owned_bucket_count_from = owned_bucket_count_from.checked_sub(1)
-		                                                         .ok_or("Transfer causes underflow of 'from' bucket balance")?;
+		let new_owned_bucket_count_from =
+			owned_bucket_count_from.checked_sub(1)
+			                       .ok_or("Transfer causes underflow of 'from' bucket balance")?;
 
 		// "Swap and pop"
 		let bucket_index = <OwnedBucketsIndex<T>>::get(bucket_id);
@@ -531,6 +570,20 @@ impl<T: Trait> Module<T> {
 
 		Ok(())
 	}
+
+	fn transfer_money(from: &T::AccountId, to: &T::AccountId, amount: T::Balance) -> Result {
+		// TODO: mig/fix legacy
+		// breaking changes: https://github.com/paritytech/substrate/pull/1921
+		// https://github.com/paritytech/substrate/pull/1943
+		// https://github.com/paritytech/substrate/issues/2159
+		// <balances::Module<T>>::make_transfer(&sender, &owner, bucket_price)?;
+		// <balances::Module<T>>::transfer(origin, owner, bucket_price)?;
+		// TODO: use T::Currency
+		// <T::Currency>::transfer(&sender, &owner, bucket_price)?;
+		// XXX: Tests needed. Possible troubles here:
+		<balances::Module<T> as Currency<T::AccountId>>::transfer(&from, &to, amount)
+	}
+
 
 	// utilites //
 
