@@ -1,31 +1,47 @@
-use service;
+use crate::service;
 use futures::{future, Future, sync::oneshot};
 use std::cell::RefCell;
 use tokio::runtime::Runtime;
 pub use substrate_cli::{VersionInfo, IntoExit, error};
 use substrate_cli::{informant, parse_and_execute, NoCustom};
 use substrate_service::{ServiceFactory, Roles as ServiceRoles};
-use chain_spec;
+use crate::chain_spec;
 use std::ops::Deref;
+use log::info;
 
 /// Parse command line arguments into service configuration.
-pub fn run<I, T, E>(args: I, exit: E, version: VersionInfo) -> error::Result<()> where
-	I: IntoIterator<Item = T>,
-	T: Into<std::ffi::OsString> + Clone,
-	E: IntoExit,
-{
+pub fn run<I, T, E>(args: I, exit: E, version: VersionInfo) -> error::Result<()>
+	where I: IntoIterator<Item = T>,
+	      T: Into<std::ffi::OsString> + Clone,
+	      E: IntoExit {
 	parse_and_execute::<service::Factory, NoCustom, NoCustom, _, _, _, _, _>(
-		load_spec, &version, "substrate-node", args, exit,
-	 	|exit, _custom_args, config| {
-			info!("{}", version.name);
-			info!("  version {}", config.full_version());
-			info!("  by Parity Technologies, 2017-2019");
-			info!("Chain specification: {}", config.chain_spec.name());
-			info!("Node name: {}", config.name);
-			info!("Roles: {:?}", config.roles);
-			let runtime = Runtime::new().map_err(|e| format!("{:?}", e))?;
-			let executor = runtime.executor();
-			match config.roles {
+	                                                                         load_spec,
+	                                                                         &version,
+	                                                                         "substrate-node",
+	                                                                         args,
+	                                                                         exit,
+	                                                                         |exit, _custom_args, config| {
+		                                                                         info!("{}", version.name);
+		                                                                         info!(
+		                                                                               "  version {}",
+		                                                                               config.full_version()
+		);
+		                                                                         info!(
+		                                                                               "  by {}, 2017, 2018",
+		                                                                               version.author
+		);
+		                                                                         info!(
+		                                                                               "Chain specification: {}",
+		                                                                               config.chain_spec.name()
+		);
+		                                                                         info!("Node name: {}", config.name);
+		                                                                         info!("Roles: {:?}", config.roles);
+		                                                                         let runtime =
+			                                                                         Runtime::new().map_err(|e| {
+				                                                                                       format!("{:?}", e)
+				                                                                                      })?;
+		                                                                         let executor = runtime.executor();
+		                                                                         match config.roles {
 				ServiceRoles::LIGHT => run_until_exit(
 					runtime,
 				 	service::Factory::new_light(config, executor).map_err(|e| format!("{:?}", e))?,
@@ -37,27 +53,22 @@ pub fn run<I, T, E>(args: I, exit: E, version: VersionInfo) -> error::Result<()>
 					exit
 				),
 			}.map_err(|e| format!("{:?}", e))
-		}
-	).map_err(Into::into).map(|_| ())
+		                                                                        },
+	).map_err(Into::into)
+	.map(|_| ())
 }
 
 fn load_spec(id: &str) -> Result<Option<chain_spec::ChainSpec>, String> {
 	Ok(match chain_spec::Alternative::from(id) {
-		Some(spec) => Some(spec.load()?),
-		None => None,
-	})
+		   Some(spec) => Some(spec.load()?),
+	     None => None,
+	   })
 }
 
-fn run_until_exit<T, C, E>(
-	mut runtime: Runtime,
-	service: T,
-	e: E,
-) -> error::Result<()>
-	where
-		T: Deref<Target=substrate_service::Service<C>>,
-		C: substrate_service::Components,
-		E: IntoExit,
-{
+fn run_until_exit<T, C, E>(mut runtime: Runtime, service: T, e: E) -> error::Result<()>
+	where T: Deref<Target = substrate_service::Service<C>>,
+	      C: substrate_service::Components,
+	      E: IntoExit {
 	let (exit_send, exit) = exit_future::signal();
 
 	let executor = runtime.executor();
@@ -65,6 +76,11 @@ fn run_until_exit<T, C, E>(
 
 	let _ = runtime.block_on(e.into_exit());
 	exit_send.fire();
+
+	// we eagerly drop the service so that the internal exit future is fired,
+	// but we need to keep holding a reference to the global telemetry guard
+	let _telemetry = service.telemetry();
+	drop(service);
 	Ok(())
 }
 
@@ -78,7 +94,10 @@ impl IntoExit for Exit {
 
 		let exit_send_cell = RefCell::new(Some(exit_send));
 		ctrlc::set_handler(move || {
-			if let Some(exit_send) = exit_send_cell.try_borrow_mut().expect("signal handler not reentrant; qed").take() {
+			if let Some(exit_send) = exit_send_cell.try_borrow_mut()
+			                                       .expect("signal handler not reentrant; qed")
+			                                       .take()
+			{
 				exit_send.send(()).expect("Error sending exit notification");
 			}
 		}).expect("Error setting Ctrl-C handler");

@@ -1,14 +1,16 @@
-use primitives::{Ed25519AuthorityId, ed25519};
+use primitives::{ed25519, sr25519, Pair};
 use akropolis_c2fc_runtime::{
 	AccountId, GenesisConfig, ConsensusConfig, TimestampConfig, BalancesConfig,
-	SudoConfig, IndicesConfig
+	SudoConfig, IndicesConfig,
 };
 use substrate_service;
+
+use ed25519::Public as AuthorityId;
 
 // Note this is the URL for the telemetry server
 //const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
 
-/// Specialised `ChainSpec`. This is a specialisation of the general Substrate ChainSpec type.
+/// Specialized `ChainSpec`. This is a specialization of the general Substrate ChainSpec type.
 pub type ChainSpec = substrate_service::ChainSpec<GenesisConfig>;
 
 /// The chain specification option. This is expected to come in from the CLI and
@@ -20,8 +22,20 @@ pub enum Alternative {
 	Development,
 	/// Whatever the current runtime is, with simple Alice/Bob auths.
 	LocalTestnet,
-	/// Custom
+
 	Akropolis,
+}
+
+fn authority_key(s: &str) -> AuthorityId {
+	ed25519::Pair::from_string(&format!("//{}", s), None)
+		.expect("static values are valid; qed")
+		.public()
+}
+
+fn account_key(s: &str) -> AccountId {
+	sr25519::Pair::from_string(&format!("//{}", s), None)
+		.expect("static values are valid; qed")
+		.public()
 }
 
 impl Alternative {
@@ -32,11 +46,11 @@ impl Alternative {
 				"Development",
 				"dev",
 				|| testnet_genesis(vec![
-					ed25519::Pair::from_seed(b"Alice                           ").public().into(),
+					authority_key("Alice")
 				], vec![
-					ed25519::Pair::from_seed(b"Alice                           ").public().0.into(),
+					account_key("Alice")
 				],
-					ed25519::Pair::from_seed(b"Alice                           ").public().0.into()
+					account_key("Alice")
 				),
 				vec![],
 				None,
@@ -48,17 +62,17 @@ impl Alternative {
 				"Local Testnet",
 				"local_testnet",
 				|| testnet_genesis(vec![
-					ed25519::Pair::from_seed(b"Alice                           ").public().into(),
-					ed25519::Pair::from_seed(b"Bob                             ").public().into(),
+					authority_key("Alice"),
+					authority_key("Bob"),
 				], vec![
-					ed25519::Pair::from_seed(b"Alice                           ").public().0.into(),
-					ed25519::Pair::from_seed(b"Bob                             ").public().0.into(),
-					ed25519::Pair::from_seed(b"Charlie                         ").public().0.into(),
-					ed25519::Pair::from_seed(b"Dave                            ").public().0.into(),
-					ed25519::Pair::from_seed(b"Eve                             ").public().0.into(),
-					ed25519::Pair::from_seed(b"Ferdie                          ").public().0.into(),
+					account_key("Alice"),
+					account_key("Bob"),
+					account_key("Charlie"),
+					account_key("Dave"),
+					account_key("Eve"),
+					account_key("Ferdie"),
 				],
-					ed25519::Pair::from_seed(b"Alice                           ").public().0.into()
+					account_key("Alice"),
 				),
 				vec![],
 				None,
@@ -71,12 +85,16 @@ impl Alternative {
 				"Akropolis",
 				"akropolis",
 				|| {
-					testnet_genesis( vec![
-							ed25519::Pair::from_seed(b"Alice                           ").public().into(),
-						], vec![
-							ed25519::Pair::from_seed(b"Alice                           ").public().0.into(),
+					testnet_genesis(
+						vec![ authority_key("Alice"), authority_key("Bob"), ],
+						vec![ account_key("Alice"),
+							   account_key("Bob"),
+							   account_key("Charlie"),
+							   account_key("Dave"),
+							   account_key("Eve"),
+							   account_key("Ferdie"),
 						],
-						ed25519::Pair::from_seed(b"Alice                           ").public().0.into(),
+						account_key("Alice"),
 					)
 				},
 				vec![],
@@ -85,6 +103,7 @@ impl Alternative {
 				None,
 				None,
 			),
+
 		})
 	}
 
@@ -98,15 +117,15 @@ impl Alternative {
 	}
 }
 
-fn testnet_genesis(initial_authorities: Vec<Ed25519AuthorityId>, endowed_accounts: Vec<AccountId>, root_key: AccountId) -> GenesisConfig {
+fn testnet_genesis(initial_authorities: Vec<AuthorityId>, endowed_accounts: Vec<AccountId>, root_key: AccountId) -> GenesisConfig {
 	GenesisConfig {
 		consensus: Some(ConsensusConfig {
-			code: include_bytes!("../runtime/wasm/target/wasm32-unknown-unknown/release/akropolis_c2fc_runtime.compact.wasm").to_vec(),
+			code: include_bytes!("../runtime/wasm/target/wasm32-unknown-unknown/release/akropolis_c2fc_runtime_wasm.compact.wasm").to_vec(),
 			authorities: initial_authorities.clone(),
 		}),
 		system: None,
 		timestamp: Some(TimestampConfig {
-			period: 5,					// 5 second block time.
+			minimum_period: 15,
 		}),
 		indices: Some(IndicesConfig {
 			ids: endowed_accounts.clone(),
@@ -117,7 +136,8 @@ fn testnet_genesis(initial_authorities: Vec<Ed25519AuthorityId>, endowed_account
 			existential_deposit: 500,
 			transfer_fee: 0,
 			creation_fee: 0,
-			balances: endowed_accounts.iter().map(|&k|(k, (1 << 60))).collect(),
+			balances: endowed_accounts.iter().cloned().map(|k|(k, 1 << 60)).collect(),
+			vesting: vec![],
 		}),
 		sudo: Some(SudoConfig {
 			key: root_key,
