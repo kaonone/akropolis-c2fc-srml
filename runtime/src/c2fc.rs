@@ -1,3 +1,7 @@
+use primitives::Bytes;
+use primitives::U256;
+use primitives::convert_hash;
+
 use support::StorageMap;
 use support::StorageValue;
 use support::dispatch::Result;
@@ -65,7 +69,6 @@ pub struct FreePromise<Hash, Balance, /* Stake, */ BlockNumber> {
 	// stake: Stake/* Balance */
 }
 
-// pub trait Trait: system::Trait {}
 pub trait Trait: balances::Trait
 // where <<Self as Trait>::Currency as Currency<Self::AccountId>>::Balance: BalanceOf<Self::AccountId>
 {
@@ -75,6 +78,7 @@ pub trait Trait: balances::Trait
 
 	type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
 }
+
 
 decl_event!(
 	pub enum Event<T>
@@ -151,7 +155,9 @@ decl_storage! {
 
 
 decl_module! {
-	pub struct Module<T: Trait> for enum Call where origin: T::Origin {
+	pub struct Module<T: Trait> for enum Call
+		where origin: T::Origin
+	{
 		fn deposit_event<T>() = default;
 
 		fn create_bucket(origin) -> Result {
@@ -190,15 +196,26 @@ decl_module! {
 			Ok(())
 		}
 
-		fn stake_to_promise(origin, promise_id: T::Hash, amount:T::Balance, period: T::BlockNumber) -> Result {
+		fn stake_to_promise(origin, promise_id: T::Hash, amount: T::Balance, period: T::BlockNumber) -> Result {
 			let sender = ensure_signed(origin)?;
-			// TODO: create LockIdentifier by/from promise_id
-			let lock: LockIdentifier = Default::default();
+			let lock = {
+				// let rnd = <system::Module<T>>::random_seed();
+				let v:&[u8] = promise_id.as_ref();
+				let a: [u8; 8] = clone_into_array(&v.as_ref()[v.len()-8..]);
+				LockIdentifier::from(a)
+			};
+
 			let until = period; // TODO: use `until` from promise
 			let reasons = WithdrawReasons::from(WithdrawReason::Reserve);
 
-			// TODO:
-			// let res = <T::Stake>::set_lock(lock, &sender, amount, until, reasons);
+				{
+					// TODO: find & consolidate all existing locks for acc into new one.
+				let locks = <balances::Module<T>>::locks(&sender);
+				}
+
+				<balances::Module<T>>::set_lock(lock, &sender, amount, until, reasons);
+				// TODO: use T::Stake instead T::Balance :
+				// <T::Stake>::set_lock(lock, &sender, amount, until, reasons);
 			Ok(())
 		}
 
@@ -464,10 +481,19 @@ decl_module! {
 	}
 }
 
-
 // private & utils //
 
 use rstd::result;
+use std::convert::AsMut;
+
+
+#[inline]
+fn clone_into_array<A: Default + AsMut<[T]>, T: Clone>(slice: &[T]) -> A {
+	let mut result = Default::default();
+	<A as AsMut<[T]>>::as_mut(&mut result).clone_from_slice(slice);
+	result
+}
+
 
 impl<T: Trait> Module<T> {
 	fn mint_bucket(to: T::AccountId, bucket_id: T::Hash,
