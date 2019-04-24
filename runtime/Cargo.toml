@@ -15,6 +15,19 @@ git = 'https://github.com/paritytech/substrate.git'
 package = 'srml-balances'
 rev = '59d5ec144704cec017a01f3e4dbb6b73c5542bf7'
 
+[dependencies.assets]
+default_features = false
+git = 'https://github.com/paritytech/substrate.git'
+package = 'srml-assets'
+rev = '59d5ec144704cec017a01f3e4dbb6b73c5542bf7'
+
+[dependencies.staking]
+default_features = false
+git = 'https://github.com/paritytech/substrate.git'
+package = 'srml-staking'
+rev = '59d5ec144704cec017a01f3e4dbb6b73c5542bf7'
+
+
 [dependencies.client]
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
