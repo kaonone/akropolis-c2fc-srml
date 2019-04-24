@@ -74,7 +74,7 @@ pub trait Trait: balances::Trait
 {
 	// type Stake: Currency<Self::AccountId> + ReservableCurrency<Self::AccountId>;
 	type Stake: LockableCurrency<Self::AccountId>;
-	type Currency: Currency<Self::AccountId>;
+	// type Currency: Currency<Self::AccountId>;
 
 	type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
 }
