@@ -17,14 +17,9 @@ use support::traits::{Currency, ReservableCurrency, OnDilution, OnUnbalanced, Im
 use runtime_io::print;
 
 
-// type Balance: Parameter + Member + SimpleArithmetic + Codec + Default + Copy + As<usize> + As<u64> + MaybeSerializeDebug;
-// type Balance: Member + Parameter + SimpleArithmetic + Default + Copy;
-pub trait Trait: assets::Trait + balances::Trait
-	where Self: assets::Trait,
-	      Self: balances::Trait,
-	      // <Self as balances::Trait>::Balance: Parameter + Member + SimpleArithmetic + Codec + Default + Copy + As<usize> + As<u64> + MaybeSerializeDebug
-	{
-	// type Currency: Currency<Self::AccountId> + ReservableCurrency<Self::AccountId>;
+// pub trait Trait: balances::Trait where Self: Currency<Self::AccountId> {
+// pub trait Trait: balances::Trait where Self: Currency<<Self as system::Trait>::AccountId> {
+pub trait Trait: balances::Trait {
 	type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
 }
 
@@ -39,26 +34,6 @@ decl_module! {
 	pub struct Module<T: Trait> for enum Call where origin: T::Origin {
 		fn deposit_event<T>() = default;
 
-		pub fn issue_token_airdrop(origin) -> Result {
-			const ACC0: u64 = 1;
-			const ACC1: u64 = 2;
-			const RECIPIENTS: [u64;2] = [ACC0, ACC1];
-			const FIXED_SUPPLY: u64 = 100;
-
-			ensure!(!RECIPIENTS.len().is_zero(), "Divide by zero error.");
-
-			let sender = ensure_signed(origin)?;
-			let asset_id = Self::next_asset_id();
-
-			// storage:
-			<NextAssetId<T>>::mutate(|asset_id| *asset_id += 1);
-			<Balances<T>>::insert((asset_id, &ACC0), FIXED_SUPPLY / RECIPIENTS.len() as u64);
-			<Balances<T>>::insert((asset_id, &ACC1), FIXED_SUPPLY / RECIPIENTS.len() as u64);
-			<TotalSupply<T>>::insert(asset_id, FIXED_SUPPLY);
-
-			Self::deposit_event(RawEvent::Issued(asset_id, sender, FIXED_SUPPLY));
-			Ok(())
-		}
 	}
 }
 
@@ -68,7 +43,7 @@ decl_event!(
 		where Balance = <T as balances::Trait>::Balance,
 		      AccountId = <T as system::Trait>::AccountId,
 	{
-		Issuedw(u16, AccountId, u64),
+		Issued(u16, AccountId, u64),
 		Stake(Balance, AccountId),
 		Withdraw(Balance, AccountId),
 	}

@@ -3,6 +3,7 @@ authors = ['Parity Technologies <admin@parity.io>']
 edition = '2018'
 name = 'akropolis-c2fc-runtime'
 version = '1.0.0'
+
 [dependencies.aura]
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
@@ -26,7 +27,6 @@ default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'srml-staking'
 rev = '59d5ec144704cec017a01f3e4dbb6b73c5542bf7'
-
 
 [dependencies.client]
 default_features = false

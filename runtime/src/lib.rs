@@ -189,7 +189,7 @@ impl sudo::Trait for Runtime {
 }
 
 impl c2fc::Trait for Runtime {
-	// type Currency = Balances;
+	/// Currency for staking
 	type Stake = Balances; // TODO: change to Currency in stake.rs mod.
 
 	type Event = Event;
