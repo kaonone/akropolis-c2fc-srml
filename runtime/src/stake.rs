@@ -25,7 +25,7 @@ pub trait Trait: balances::Trait {
 
 
 decl_storage! {
-	trait Store for Module<T: Trait> as AKT {
+	trait Store for Module<T: Trait> as Akt {
 		Stake get(value): map T::AccountId => T::Balance;
 	}
 }

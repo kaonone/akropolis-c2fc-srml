@@ -74,11 +74,18 @@ pub struct FreePromise<Hash, Balance, /* Stake, */ BlockNumber> {
 }
 
 
+type BalanceOf<T> = <<T as balances::Trait>::Balance as Currency<<T as system::Trait>::AccountId>>::Balance;
+// type StakeBalance<T> = <<T as Trait>::Stake as LockableCurrency<<T as system::Trait>::AccountId, Moment = <T as system::Trait>::BlockNumber>>::Balance;
+type StakeBalance<T> = <<T as Trait>::Stake as Currency<<T as system::Trait>::AccountId>>::Balance;
+// type PositiveImbalanceOf<T> = <<T as Trait>::Currency as Currency<<T as system::Trait>::AccountId>>::PositiveImbalance;
+// type NegativeImbalanceOf<T> = <<T as Trait>::Currency as Currency<<T as system::Trait>::AccountId>>::NegativeImbalance;
+
+
 // where <Self as system::Trait>::AccountId: Self::Stake::AccountId
 pub trait Trait: system::Trait + balances::Trait {
-	type Stake: LockableCurrency<Self::AccountId>;
-	// type Stake: balances::Trait;
-	// type Currency: Currency<Self::AccountId>;
+	type Stake: LockableCurrency<Self::AccountId, Moment = <Self as system::Trait>::BlockNumber>;
+	// type Stake: balances::Trait<Balance = <Self as balances::Trait>::Balance>;
+	// type Stake: crate::stake::Trait<Balance = Self::Balance>;
 
 	type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
 }
@@ -89,7 +96,7 @@ decl_event!(
 	where
 		<T as system::Trait>::AccountId,
 		<T as system::Trait>::Hash,
-		<T as balances::Trait>::Balance
+		<T as balances::Trait>::Balance,
 	{
 		BucketCreated(AccountId, Hash),
 		/// OwnerSet: from, to, bucket
@@ -113,8 +120,8 @@ decl_event!(
 		PromiseBreached(Hash, Hash, Balance),
 
 		// Staking / Locking:
-		// Issued(u16, AccountId, u64),
 		Stake(Hash, AccountId, Balance),
+		// Stake(Hash, AccountId, StakeBalance<Self>),
 		Withdraw(Hash, AccountId, Balance),
 	}
 );
@@ -160,7 +167,6 @@ decl_storage! {
 		LocksCount get(locks_count): u64;
 		/// promise_id -> LockIdentifier
 		LockForPromise get(lock_for_promise): map T::Hash => LockIdentifier;
-		// Stake get(stake_by_promise): map T::Hash => T::Balance;
 
 		Nonce: u64;
 	}
@@ -213,8 +219,7 @@ decl_module! {
 		}
 
 
-		// fn stake_to_promise(origin, promise_id: T::Hash, amount: <T::Stake as balances::Trait>::Balance, period: <T::Stake as system::Trait>::BlockNumber) -> Result {
-		// where T::BlockNumber = crate::BlockNumber
+		// TODO: fn stake_to_promise(origin, promise_id: T::Hash, amount: StakeBalance<T>) -> Result {
 		fn stake_to_promise(origin, promise_id: T::Hash, amount: T::Balance) -> Result {
 			let sender = ensure_signed(origin)?;
 
@@ -272,14 +277,16 @@ decl_module! {
 				// e.g. crate::BlockNumber::max_value() - <T::Balance as As<crate::Balance>>::sa(lock.amount as crate::Balance) >= <T::Balance as As<crate::Balance>>::sa(amount as crate::Balance)
 
 				<balances::Module<T>>::extend_lock(lock_id, &sender, lock.amount + amount, until, reasons);
+				// <T::Stake>::extend_lock(lock_id, &sender, lock.amount + amount, until, reasons);
 			} else {
 				let lock_id = Self::next_free_lock_identifier(&promise_id);
 
+				// <T::Stake>::set_lock(lock_id, &sender, amount, until, reasons);
 				<balances::Module<T>>::set_lock(lock_id, &sender, amount, until, reasons);
 
 				// TODO: use T::Stake instead T::Balance:
-				// <T::Stake>::set_lock(lock, &sender, amount, until, reasons);
-				// <balances::Module<T::Stake>>::set_lock(lock, &sender, amount, until, reasons);
+				// <T::Stake>::set_lock(lock_id, &sender, amount, until, reasons);
+				// <balances::Module<T::Stake>>::set_lock(lock_id, &sender, amount, until, reasons);
 
 				// register new lock:
 				<LockForPromise<T>>::insert(promise_id, lock_id);
