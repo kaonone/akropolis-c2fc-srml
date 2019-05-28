@@ -4,13 +4,12 @@ use support::StorageValue;
 use support::dispatch::Result;
 use support::{decl_module, decl_storage, decl_event};
 use support::{ensure, fail};
-// use system::ensure_signed;
-use system::{ensure_signed, ensure_root, ensure_inherent};
-use runtime_primitives::traits::{As, Hash, Zero};
+use system::{ensure_signed, ensure_root};
+use runtime_primitives::traits::{Hash, Zero};
 use assets::*;
 
 #[cfg(feature = "std")]
-use serde_derive::{Serialize, Deserialize};
+use serde::{Serialize, Deserialize};
 use parity_codec::{Encode, Decode};
 
 use support::traits::{Currency, ReservableCurrency, OnDilution, OnUnbalanced, Imbalance};

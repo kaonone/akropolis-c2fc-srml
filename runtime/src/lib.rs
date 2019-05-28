@@ -1,13 +1,18 @@
-//! The Akropolis C2FC runtime based on Substrate Node Template runtime.
+//! The Akropolis Substrate Node runtime.
 //! This can be compiled with `#[no_std]`, ready for Wasm.
 
 #![cfg_attr(not(feature = "std"), no_std)]
-#![cfg_attr(not(feature = "std"), feature(alloc))]
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 #![recursion_limit="256"]
 
+// #[macro_use]
+// extern crate hex_literal;
+
+// #[macro_use]
+// extern crate srml_support;
+
 #[cfg(feature = "std")]
-use serde_derive::{Serialize, Deserialize};
+use serde::{Serialize, Deserialize};
 use parity_codec::{Encode, Decode};
 use rstd::prelude::*;
 #[cfg(feature = "std")]
@@ -15,12 +20,16 @@ use primitives::bytes;
 use primitives::{ed25519, sr25519, OpaqueMetadata};
 use runtime_primitives::{
 	ApplyResult, transaction_validity::TransactionValidity, generic, create_runtime_str,
-	traits::{self, NumberFor, BlakeTwo256, Block as BlockT, StaticLookup, Verify}
+	traits::{self, NumberFor, BlakeTwo256, Block as BlockT, DigestFor, StaticLookup, Verify}
 };
+
 use client::{
 	block_builder::api::{CheckInherentsResult, InherentData, self as block_builder_api},
 	runtime_api, impl_runtime_apis
 };
+
+use grandpa::fg_primitives::{self, ScheduledChange};
+
 use version::RuntimeVersion;
 #[cfg(feature = "std")]
 use version::NativeVersion;
@@ -56,8 +65,8 @@ pub type BlockNumber = u64;
 /// Index of an account's extrinsic in the chain.
 pub type Nonce = u64;
 
-pub mod c2fc;
-pub mod stake;
+mod c2fc;
+mod stake;
 
 /// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
 /// the specifics of the runtime. They can then be made to be agnostic over specific formats
@@ -93,11 +102,11 @@ pub mod opaque {
 
 /// This runtime version.
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: create_runtime_str!("akropolis-c2fc"),
-	impl_name: create_runtime_str!("akropolis-c2fc"),
+	spec_name: create_runtime_str!("akropolis"),
+	impl_name: create_runtime_str!("akropolis"),
 	authoring_version: 3,
-	spec_version: 3,
-	impl_version: 0,
+	spec_version: 4,
+	impl_version: 4,
 	apis: RUNTIME_API_VERSIONS,
 };
 
@@ -137,6 +146,7 @@ impl system::Trait for Runtime {
 
 impl aura::Trait for Runtime {
 	type HandleReport = ();
+	// TODO: type HandleReport = aura::StakingSlasher<Runtime>;
 }
 
 impl consensus::Trait for Runtime {
@@ -182,11 +192,22 @@ impl balances::Trait for Runtime {
 	type TransferPayment = ();
 }
 
+impl grandpa::Trait for Runtime {
+	type SessionKey = AuthorityId;
+	type Log = Log;
+	type Event = Event;
+}
+
+impl finality_tracker::Trait for Runtime {
+	type OnFinalizationStalled = grandpa::SyncedAuthorities<Runtime>;
+}
+
 impl sudo::Trait for Runtime {
 	/// The uniquitous event type.
 	type Event = Event;
 	type Proposal = Call;
 }
+
 
 impl c2fc::Trait for Runtime {
 	/// Currency for staking
@@ -208,11 +229,16 @@ construct_runtime!(
 		UncheckedExtrinsic = UncheckedExtrinsic
 	{
 		System: system::{default, Log(ChangesTrieRoot)},
+		// Aura: aura::{Module},
+		Aura: aura::{Module, Inherent(Timestamp)},
 		Timestamp: timestamp::{Module, Call, Storage, Config<T>, Inherent},
 		Consensus: consensus::{Module, Call, Storage, Config<T>, Log(AuthoritiesChange), Inherent},
-		Aura: aura::{Module},
 		Indices: indices,
 		Balances: balances,
+		// TODO: Staking: staking,
+		// TODO: Treasury: treasury,
+		FinalityTracker: finality_tracker::{Module, Call, Inherent},
+		Grandpa: grandpa::{Module, Call, Storage, Config<T>, Log(), Event<T>},
 		Sudo: sudo,
 		// C2FC:
 		Promises: c2fc::{Module, Call, Storage, Event<T>},
@@ -235,7 +261,8 @@ pub type UncheckedExtrinsic = generic::UncheckedMortalCompactExtrinsic<Address, 
 /// Extrinsic type that has already been checked.
 pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, Nonce, Call>;
 /// Executive: handles dispatch to the various modules.
-pub type Executive = executive::Executive<Runtime, Block, Context, Balances, AllModules>;
+pub type Executive = executive::Executive<Runtime, Block, Context, Balances, Runtime, AllModules>;
+
 
 // Implement our runtime API endpoints. This is just a bunch of proxying.
 impl_runtime_apis! {
@@ -306,6 +333,59 @@ impl_runtime_apis! {
 	impl consensus_authorities::AuthoritiesApi<Block> for Runtime {
 		fn authorities() -> Vec<AuthorityId> {
 			Consensus::authorities()
+		}
+	}
+
+	impl fg_primitives::GrandpaApi<Block> for Runtime {
+		// fn grandpa_pending_change(digest: &DigestFor<Block>)
+		// 	-> Option<ScheduledChange<BlockNumber>>
+		// {
+		// 	for log in digest.logs.iter().filter_map(|l| match l {
+		// 		Log(InternalLog::grandpa(grandpa_signal)) => Some(grandpa_signal),
+		// 		_=> None
+		// 	}) {
+		// 		if let Some(change) = Grandpa::scrape_digest_change(log) {
+		// 			return Some(change);
+		// 		}
+		// 	}
+		// 	None
+		// }
+
+		// fn grandpa_forced_change(digest: &DigestFor<Block>) -> Option<(BlockNumber, ScheduledChange<BlockNumber>)> {
+		// 	// TODO: runtime::grandpa_forced_change(digest)
+		// 	None // disable forced changes.
+		// }
+
+		// fn grandpa_authorities() -> Vec<(AuthorityId, u64)> {
+		// 	Grandpa::grandpa_authorities()
+		// }
+
+		fn grandpa_pending_change(digest: &DigestFor<Block>) -> Option<ScheduledChange<NumberFor<Block>>> {
+			for log in digest.logs.iter().filter_map(|l| match l {
+				Log(InternalLog::grandpa(grandpa_signal)) => Some(grandpa_signal),
+				_ => None
+			}) {
+				if let Some(change) = Grandpa::scrape_digest_change(log) {
+					return Some(change);
+				}
+			}
+			None
+		}
+
+		fn grandpa_forced_change(digest: &DigestFor<Block>) -> Option<(NumberFor<Block>, ScheduledChange<NumberFor<Block>>)> {
+			for log in digest.logs.iter().filter_map(|l| match l {
+				Log(InternalLog::grandpa(grandpa_signal)) => Some(grandpa_signal),
+				_ => None
+			}) {
+				if let Some(change) = Grandpa::scrape_digest_forced_change(log) {
+					return Some(change);
+				}
+			}
+			None
+		}
+
+		fn grandpa_authorities() -> Vec<(AuthorityId, u64)> {
+			Grandpa::grandpa_authorities()
 		}
 	}
 }

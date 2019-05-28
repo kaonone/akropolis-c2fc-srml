@@ -2,4 +2,4 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-pub use akropolis_c2fc_runtime::*;
+pub use akropolis_runtime::*;

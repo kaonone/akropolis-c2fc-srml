@@ -1,23 +1,34 @@
-//! Substrate Node Template CLI library.
+//! Akropolis Substrate Node.
 
 #![warn(missing_docs)]
 #![warn(unused_extern_crates)]
 
+#[macro_use]
+extern crate hex_literal;
+
+mod consts;
+// mod error;
 mod chain_spec;
 mod service;
 mod cli;
 
 pub use substrate_cli::{VersionInfo, IntoExit, error};
 
-fn run() -> cli::error::Result<()> {
-	let version = VersionInfo { name: "Substrate Node",
-	                            commit: env!("VERGEN_SHA_SHORT"),
-	                            version: env!("CARGO_PKG_VERSION"),
-	                            executable_name: "akropolis-c2fc",
-	                            author: "AkropolisRnDTeam",
-	                            description: "Akropolis C2FC",
-	                            support_url: "support.akropolis.io" };
-	cli::run(::std::env::args(), cli::Exit, version)
-}
+fn main() {
+	use consts::*;
 
-error_chain::quick_main!(run);
+	let version = VersionInfo {
+		name: NODE_NAME,
+		commit: env!("VERGEN_SHA_SHORT"),
+		version: env!("CARGO_PKG_VERSION"),
+		executable_name: "akropolis",
+		author: AUTHOR_NAME,
+		description: DESCRIPTION,
+		support_url: SUPPORT_URL,
+	};
+
+	if let Err(e) = cli::run(::std::env::args(), cli::Exit, version) {
+		eprintln!("Error starting the node: {}\n\n{:?}", e, e);
+		std::process::exit(1)
+	}
+}

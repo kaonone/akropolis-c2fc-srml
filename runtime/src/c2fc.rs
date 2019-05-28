@@ -4,7 +4,7 @@ use rstd::result;
 use primitives::Bytes;
 use primitives::U256;
 use primitives::convert_hash;
-use runtime_primitives::traits::{As, Hash, Zero};
+use runtime_primitives::traits::{Hash, Zero};
 
 use support::StorageMap;
 use support::StorageValue;
@@ -12,7 +12,7 @@ use support::dispatch::Result;
 use support::{decl_module, decl_storage, decl_event};
 use support::{ensure, fail};
 use support::traits::MakePayment;
-use system::{ensure_signed, ensure_root, ensure_inherent};
+use system::{ensure_signed, ensure_root};
 use balances::BalanceLock;
 
 use support::traits::{Currency, ReservableCurrency, OnDilution, OnUnbalanced, Imbalance};
@@ -20,7 +20,7 @@ use support::traits::{LockableCurrency, LockIdentifier, WithdrawReason, Withdraw
 use runtime_io::print;
 
 #[cfg(feature = "std")]
-use serde_derive::{Serialize, Deserialize};
+use serde::{Serialize, Deserialize};
 use parity_codec::{Encode, Decode};
 
 
@@ -127,7 +127,7 @@ decl_event!(
 );
 
 decl_storage! {
-	trait Store for Module<T: Trait> as C2FC {
+	trait Store for Module<T: Trait> as c2fc {
 		Buckets get(bucket): map T::Hash => Bucket<T::Hash, T::Balance, T::AccountId, T::BlockNumber>;
 		BucketOwner get(owner_of): map T::Hash => Option<T::AccountId>;
 		/// same as `AcceptedPromiseBucket` but by bucket_id
@@ -185,7 +185,7 @@ decl_module! {
 			let new_bucket = Bucket {
 					id: bucket_id,
 					promise: None,
-					price: <T::Balance as As<u64>>::sa(0),
+					price: T::Balance::zero(),
 			};
 
 			Self::mint_bucket(sender, bucket_id, new_bucket)?;
@@ -380,7 +380,7 @@ decl_module! {
 				period: free_promise.period,
 				until: free_promise.until,
 				acception_dt: current_block,
-				filled: <T::Balance as As<u64>>::sa(0),
+				filled: T::Balance::zero(),
 			};
 
 			bucket.promise = Some(promise);
@@ -457,7 +457,7 @@ decl_module! {
 			Self::transfer_money(&sender, &owner, bucket_price)?;
 			Self::transfer_from(owner.clone(), sender.clone(), bucket_id)?;
 
-			bucket.price = <T::Balance as As<u64>>::sa(0);
+			bucket.price = T::Balance::zero();
 			<Buckets<T>>::insert(bucket_id, bucket);
 
 			Self::deposit_event(RawEvent::Bought(sender, owner, bucket_id, bucket_price));
@@ -519,7 +519,7 @@ decl_module! {
 
 		/// Check the breach of promise at end of the each block.
 		/// Simple timer here.
-		fn on_finalise(n: T::BlockNumber) {
+		fn on_finalize(n: T::BlockNumber) {
 			let accepted_promises_count = Self::accepted_promises_count();
 
 			for i in 0..accepted_promises_count {
