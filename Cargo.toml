@@ -3,7 +3,7 @@ authors = ['Akropolis <admin@akropolis.io>']
 build = 'build.rs'
 edition = '2018'
 name = 'akropolis'
-version = '0.8.0'
+version = '0.8.1'
 
 [[bin]]
 name = 'akropolis'

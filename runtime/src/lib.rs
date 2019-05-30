@@ -3,13 +3,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
-#![recursion_limit="256"]
-
-// #[macro_use]
-// extern crate hex_literal;
-
-// #[macro_use]
-// extern crate srml_support;
+#![recursion_limit = "256"]
 
 #[cfg(feature = "std")]
 use serde::{Serialize, Deserialize};
@@ -66,6 +60,7 @@ pub type BlockNumber = u64;
 pub type Nonce = u64;
 
 mod c2fc;
+mod assets;
 mod stake;
 
 /// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
@@ -78,7 +73,7 @@ pub mod opaque {
 	/// Opaque, encoded, unchecked extrinsic.
 	#[derive(PartialEq, Eq, Clone, Default, Encode, Decode)]
 	#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-	pub struct UncheckedExtrinsic(#[cfg_attr(feature = "std", serde(with="bytes"))] pub Vec<u8>);
+	pub struct UncheckedExtrinsic(#[cfg_attr(feature = "std", serde(with = "bytes"))] pub Vec<u8>);
 	#[cfg(feature = "std")]
 	impl std::fmt::Debug for UncheckedExtrinsic {
 		fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -91,13 +86,17 @@ pub mod opaque {
 		}
 	}
 	/// Opaque block header type.
-	pub type Header = generic::Header<BlockNumber, BlakeTwo256, generic::DigestItem<Hash, AuthorityId, AuthoritySignature>>;
+	pub type Header =
+		generic::Header<BlockNumber, BlakeTwo256, generic::DigestItem<Hash, AuthorityId, AuthoritySignature>>;
 	/// Opaque block type.
 	pub type Block = generic::Block<Header, UncheckedExtrinsic>;
 	/// Opaque block identifier type.
 	pub type BlockId = generic::BlockId<Block>;
 	/// Opaque session key type.
 	pub type SessionKey = AuthorityId;
+
+	// / Opaque AssetId key type.
+	// pub type AssetId = u32; // assets::AssetId;
 }
 
 /// This runtime version.
@@ -182,6 +181,7 @@ impl balances::Trait for Runtime {
 	type Balance = u128;
 	/// What to do if an account's free balance gets zeroed.
 	type OnFreeBalanceZero = ();
+	// TODO: type OnFreeBalanceZero = ((Staking, Contract), Session);
 	/// What to do if a new account is created.
 	type OnNewAccount = Indices;
 	/// The uniquitous event type.
@@ -191,6 +191,12 @@ impl balances::Trait for Runtime {
 	type DustRemoval = ();
 	type TransferPayment = ();
 }
+
+// impl assets::Trait for Runtime {
+// 	type Event = Event;
+// 	// type Balance = Balance;
+// 	type Balance = <Runtime as balances::Trait>::Balance;
+// }
 
 impl grandpa::Trait for Runtime {
 	type SessionKey = AuthorityId;
@@ -221,6 +227,12 @@ impl stake::Trait for Runtime {
 	type Event = Event;
 }
 
+// impl token::Trait for Runtime {
+// 	type Event = Event;
+// 	type Balance = <Runtime as balances::Trait>::Balance;
+// 	type AssetId = u32;
+// }
+
 
 construct_runtime!(
 	pub enum Runtime with Log(InternalLog: DigestItem<Hash, AuthorityId, AuthoritySignature>) where
@@ -235,14 +247,17 @@ construct_runtime!(
 		Consensus: consensus::{Module, Call, Storage, Config<T>, Log(AuthoritiesChange), Inherent},
 		Indices: indices,
 		Balances: balances,
+		// Assets: assets::{Module, Event<T>, AssetId},
+		// Assets: assets::{Module, Call, Storage, Event<T>, AssetId},
 		// TODO: Staking: staking,
 		// TODO: Treasury: treasury,
 		FinalityTracker: finality_tracker::{Module, Call, Inherent},
 		Grandpa: grandpa::{Module, Call, Storage, Config<T>, Log(), Event<T>},
 		Sudo: sudo,
 		// C2FC:
-		Promises: c2fc::{Module, Call, Storage, Event<T>},
+		Cashflow: c2fc::{Module, Call, Storage, Event<T>, Bucket},
 		Stake: stake::{Module, Call, Storage, Event<T>},
+		// Token: token::{Module, Call, Storage, Event<T>},
 	}
 );
 
@@ -262,6 +277,7 @@ pub type UncheckedExtrinsic = generic::UncheckedMortalCompactExtrinsic<Address, 
 pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, Nonce, Call>;
 /// Executive: handles dispatch to the various modules.
 pub type Executive = executive::Executive<Runtime, Block, Context, Balances, Runtime, AllModules>;
+
 
 
 // Implement our runtime API endpoints. This is just a bunch of proxying.
@@ -337,29 +353,6 @@ impl_runtime_apis! {
 	}
 
 	impl fg_primitives::GrandpaApi<Block> for Runtime {
-		// fn grandpa_pending_change(digest: &DigestFor<Block>)
-		// 	-> Option<ScheduledChange<BlockNumber>>
-		// {
-		// 	for log in digest.logs.iter().filter_map(|l| match l {
-		// 		Log(InternalLog::grandpa(grandpa_signal)) => Some(grandpa_signal),
-		// 		_=> None
-		// 	}) {
-		// 		if let Some(change) = Grandpa::scrape_digest_change(log) {
-		// 			return Some(change);
-		// 		}
-		// 	}
-		// 	None
-		// }
-
-		// fn grandpa_forced_change(digest: &DigestFor<Block>) -> Option<(BlockNumber, ScheduledChange<BlockNumber>)> {
-		// 	// TODO: runtime::grandpa_forced_change(digest)
-		// 	None // disable forced changes.
-		// }
-
-		// fn grandpa_authorities() -> Vec<(AuthorityId, u64)> {
-		// 	Grandpa::grandpa_authorities()
-		// }
-
 		fn grandpa_pending_change(digest: &DigestFor<Block>) -> Option<ScheduledChange<NumberFor<Block>>> {
 			for log in digest.logs.iter().filter_map(|l| match l {
 				Log(InternalLog::grandpa(grandpa_signal)) => Some(grandpa_signal),

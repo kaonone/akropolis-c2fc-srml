@@ -1,19 +1,19 @@
-use crate::Balances;
-use support::StorageMap;
-use support::StorageValue;
-use support::dispatch::Result;
+// use crate::Balances;
+// use support::StorageMap;
+// use support::StorageValue;
+// use support::dispatch::Result;
 use support::{decl_module, decl_storage, decl_event};
-use support::{ensure, fail};
-use system::{ensure_signed, ensure_root};
-use runtime_primitives::traits::{Hash, Zero};
-use assets::*;
+// use support::{ensure, fail};
+// use system::{ensure_signed, ensure_root};
+// use runtime_primitives::traits::{Hash, Zero};
+// use assets::*;
 
-#[cfg(feature = "std")]
-use serde::{Serialize, Deserialize};
-use parity_codec::{Encode, Decode};
+// #[cfg(feature = "std")]
+// use serde::{Serialize, Deserialize};
+// use parity_codec::{Encode, Decode};
 
-use support::traits::{Currency, ReservableCurrency, OnDilution, OnUnbalanced, Imbalance};
-use runtime_io::print;
+// use support::traits::{Currency, ReservableCurrency, OnDilution, OnUnbalanced, Imbalance};
+// use runtime_io::print;
 
 
 // pub trait Trait: balances::Trait where Self: Currency<Self::AccountId> {

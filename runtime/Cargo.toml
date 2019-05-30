@@ -2,7 +2,7 @@
 name = 'akropolis-runtime'
 authors = ['Akropolis <admin@akropolis.io>']
 edition = '2018'
-version = '0.8.0'
+version = '0.8.1'
 
 
 # [dependencies]
