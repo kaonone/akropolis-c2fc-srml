@@ -2,7 +2,7 @@
 
 ### What is Commitments to Future Cashflows:
 
-More about it you can read here: *link to c2fc description*
+More about it you can read [here](https://wiki.akropolis.io/c2fc/overview/)
 
 ### Design
 
