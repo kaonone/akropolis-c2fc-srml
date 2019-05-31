@@ -6,8 +6,6 @@ Implementation of financial primitive Commitments to Future Cashflows on Substra
 ## Try it out
 
 - [telemetry](https://telemetry.polkadot.io/#/Akropolis)
-    - [bootnode #1](https://telemetry.polkadot.io/network_state/Akropolis/565/)
-    - [bootnode #2](https://telemetry.polkadot.io/network_state/Akropolis/569/)
 - [polkadot.js.org](https://polkadot.js.org/apps/)
 
 Connect to local node:
@@ -60,8 +58,8 @@ akropolis --chain akropolis \
     --keystore-path ./keystore \
     --listen-addr /ip4/0.0.0.0/tcp/30333 \
     --bootnodes \
-          /ip4/178.128.225.241/tcp/30333/p2p/QmP71M5Xami5ud3ZL9SZe1Wic7xPBPxaAsV4W3wZe9KWCK \
-          /ip4/157.230.35.215/tcp/30333/p2p/QmRe8UD9o8F8Jv55JQvrmNPt5SaWYU2fbey2HoiLzLYawo
+          /ip4/178.128.225.241/tcp/30333/p2p/QmbdSLdQ5yyRG5kCLLUCDyG7FUwbqtHngRWCJyG6yULWax \
+          /ip4/157.230.35.215/tcp/30333/p2p/QmbmedQMeErSiQH2AFXyb9MSNxtUNJAdH6CY6hWcdKuXJi
 ```
 
 
