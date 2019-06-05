@@ -166,7 +166,7 @@ impl indices::Trait for Runtime {
 	type ResolveHint = indices::SimpleResolveHint<Self::AccountId, Self::AccountIndex>;
 	/// Determine whether an account is dead.
 	type IsDeadAccount = Balances;
-	/// The uniquitous event type.
+	/// The ubiquitous event type.
 	type Event = Event;
 }
 
@@ -184,7 +184,7 @@ impl balances::Trait for Runtime {
 	// TODO: type OnFreeBalanceZero = ((Staking, Contract), Session);
 	/// What to do if a new account is created.
 	type OnNewAccount = Indices;
-	/// The uniquitous event type.
+	/// The ubiquitous event type.
 	type Event = Event;
 
 	type TransactionPayment = ();
@@ -201,6 +201,8 @@ impl balances::Trait for Runtime {
 impl grandpa::Trait for Runtime {
 	type SessionKey = AuthorityId;
 	type Log = Log;
+
+	/// The ubiquitous event type.
 	type Event = Event;
 }
 
@@ -209,7 +211,7 @@ impl finality_tracker::Trait for Runtime {
 }
 
 impl sudo::Trait for Runtime {
-	/// The uniquitous event type.
+	/// The ubiquitous event type.
 	type Event = Event;
 	type Proposal = Call;
 }
@@ -220,14 +222,17 @@ impl c2fc::Trait for Runtime {
 	// TODO: change to Currency in stake.rs mod.
 	// type Stake = Stake;
 	type Stake = Balances;
+	/// The ubiquitous event type.
 	type Event = Event;
 }
 
 impl stake::Trait for Runtime {
+	/// The ubiquitous event type.
 	type Event = Event;
 }
 
 // impl token::Trait for Runtime {
+// 	/// The ubiquitous event type.
 // 	type Event = Event;
 // 	type Balance = <Runtime as balances::Trait>::Balance;
 // 	type AssetId = u32;
@@ -295,9 +300,9 @@ impl_runtime_apis! {
 			Executive::initialize_block(header)
 		}
 
-		fn authorities() -> Vec<AuthorityId> {
-			panic!("Deprecated, please use `AuthoritiesApi`.")
-		}
+		// fn authorities() -> Vec<AuthorityId> {
+		// 	panic!("Deprecated, please use `AuthoritiesApi`.")
+		// }
 	}
 
 	impl runtime_api::Metadata<Block> for Runtime {

@@ -1,7 +1,7 @@
 [package]
 name = 'akropolis-runtime-wasm'
 authors = ['Akropolis <admin@akropolis.io>']
-version = '0.8.0'
+version = '0.8.2'
 edition = '2018'
 
 [lib]
