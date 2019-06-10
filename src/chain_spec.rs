@@ -2,7 +2,7 @@ use primitives::{ed25519, sr25519, Pair};
 use primitives::crypto::UncheckedInto;
 use akropolis_runtime::{
 	AccountId, GenesisConfig, ConsensusConfig, TimestampConfig, BalancesConfig,
-	GrandpaConfig,
+	// GrandpaConfig,
 	SudoConfig, IndicesConfig,
 	// AssetsConfig
 };
@@ -191,10 +191,10 @@ fn testnet_genesis(
 			balances: endowed_accounts.iter().cloned().map(|k| (k, 1 << 60)).collect(),
 			vesting: vec![],
 		}),
-		// TODO: grandpa: Some(GrandpaConfig {
-		grandpa: Some(GrandpaConfig {
-			authorities: initial_authorities.iter().map(|x| (x.clone(), 1)).collect(),
-		}),
+		// XXX: temporarily disable the grandpa
+		// grandpa: Some(GrandpaConfig {
+		// 	authorities: initial_authorities.iter().map(|x| (x.clone(), 1)).collect(),
+		// }),
 		// TODO: assets: Some(AssetsConfig{}),
 		// properties: (
 		// 	tokenDecimals: 15,

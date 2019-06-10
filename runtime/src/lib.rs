@@ -198,6 +198,7 @@ impl balances::Trait for Runtime {
 // 	type Balance = <Runtime as balances::Trait>::Balance;
 // }
 
+/*
 impl grandpa::Trait for Runtime {
 	type SessionKey = AuthorityId;
 	type Log = Log;
@@ -209,6 +210,7 @@ impl grandpa::Trait for Runtime {
 impl finality_tracker::Trait for Runtime {
 	type OnFinalizationStalled = grandpa::SyncedAuthorities<Runtime>;
 }
+*/
 
 impl sudo::Trait for Runtime {
 	/// The ubiquitous event type.
@@ -256,8 +258,9 @@ construct_runtime!(
 		// Assets: assets::{Module, Call, Storage, Event<T>, AssetId},
 		// TODO: Staking: staking,
 		// TODO: Treasury: treasury,
-		FinalityTracker: finality_tracker::{Module, Call, Inherent},
-		Grandpa: grandpa::{Module, Call, Storage, Config<T>, Log(), Event<T>},
+		// XXX: temporarily disable the grandpa
+		// FinalityTracker: finality_tracker::{Module, Call, Inherent},
+		// Grandpa: grandpa::{Module, Call, Storage, Config<T>, Log(), Event<T>},
 		Sudo: sudo,
 		// C2FC:
 		Cashflow: c2fc::{Module, Call, Storage, Event<T>, Bucket},
@@ -357,6 +360,7 @@ impl_runtime_apis! {
 		}
 	}
 
+	/*
 	impl fg_primitives::GrandpaApi<Block> for Runtime {
 		fn grandpa_pending_change(digest: &DigestFor<Block>) -> Option<ScheduledChange<NumberFor<Block>>> {
 			for log in digest.logs.iter().filter_map(|l| match l {
@@ -386,4 +390,5 @@ impl_runtime_apis! {
 			Grandpa::grandpa_authorities()
 		}
 	}
+	*/
 }
