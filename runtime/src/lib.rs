@@ -22,7 +22,8 @@ use client::{
 	runtime_api, impl_runtime_apis
 };
 
-use grandpa::fg_primitives::{self, ScheduledChange};
+// temporarily disable the grandpa (issue #2834)
+// use grandpa::fg_primitives::{self, ScheduledChange};
 
 use version::RuntimeVersion;
 #[cfg(feature = "std")]
@@ -257,7 +258,7 @@ construct_runtime!(
 		// Assets: assets::{Module, Call, Storage, Event<T>, AssetId},
 		// TODO: Staking: staking,
 		// TODO: Treasury: treasury,
-		// XXX: temporarily disable the grandpa
+		// XXX: temporarily disable the grandpa (issue #2834)
 		// FinalityTracker: finality_tracker::{Module, Call, Inherent},
 		// Grandpa: grandpa::{Module, Call, Storage, Config<T>, Log(), Event<T>},
 		Sudo: sudo,

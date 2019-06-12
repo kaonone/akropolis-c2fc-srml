@@ -191,7 +191,7 @@ fn testnet_genesis(
 			balances: endowed_accounts.iter().cloned().map(|k| (k, 1 << 60)).collect(),
 			vesting: vec![],
 		}),
-		// XXX: temporarily disable the grandpa
+		// XXX: temporarily disable the grandpa (issue #2834)
 		// grandpa: Some(GrandpaConfig {
 		// 	authorities: initial_authorities.iter().map(|x| (x.clone(), 1)).collect(),
 		// }),
