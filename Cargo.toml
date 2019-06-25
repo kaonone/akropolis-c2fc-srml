@@ -41,56 +41,56 @@ path = 'runtime'
 
 
 [dependencies.basic-authorship]
-git = 'https://github.com/paritytech/substrate.git'
+git = 'https://github.com/akropolisio/substrate.git'
 package = 'substrate-basic-authorship'
 rev = '03e786669d0556ba44c889e1ee141dbb0dfaa9e2'
 
 [dependencies.consensus]
-git = 'https://github.com/paritytech/substrate.git'
+git = 'https://github.com/akropolisio/substrate.git'
 package = 'substrate-consensus-aura'
 rev = '03e786669d0556ba44c889e1ee141dbb0dfaa9e2'
 
 [dependencies.inherents]
-git = 'https://github.com/paritytech/substrate.git'
+git = 'https://github.com/akropolisio/substrate.git'
 package = 'substrate-inherents'
 rev = '03e786669d0556ba44c889e1ee141dbb0dfaa9e2'
 
 [dependencies.network]
-git = 'https://github.com/paritytech/substrate.git'
+git = 'https://github.com/akropolisio/substrate.git'
 package = 'substrate-network'
 rev = '03e786669d0556ba44c889e1ee141dbb0dfaa9e2'
 
 [dependencies.telemetry]
-git = 'https://github.com/paritytech/substrate.git'
+git = 'https://github.com/akropolisio/substrate.git'
 package = 'substrate-telemetry'
 rev = '03e786669d0556ba44c889e1ee141dbb0dfaa9e2'
 
 [dependencies.primitives]
-git = 'https://github.com/paritytech/substrate.git'
+git = 'https://github.com/akropolisio/substrate.git'
 package = 'substrate-primitives'
 rev = '03e786669d0556ba44c889e1ee141dbb0dfaa9e2'
 
 [dependencies.sr-io]
-git = 'https://github.com/paritytech/substrate.git'
+git = 'https://github.com/akropolisio/substrate.git'
 rev = '03e786669d0556ba44c889e1ee141dbb0dfaa9e2'
 
 [dependencies.substrate-cli]
-git = 'https://github.com/paritytech/substrate.git'
+git = 'https://github.com/akropolisio/substrate.git'
 rev = '03e786669d0556ba44c889e1ee141dbb0dfaa9e2'
 
 [dependencies.substrate-client]
-git = 'https://github.com/paritytech/substrate.git'
+git = 'https://github.com/akropolisio/substrate.git'
 rev = '03e786669d0556ba44c889e1ee141dbb0dfaa9e2'
 
 [dependencies.substrate-executor]
-git = 'https://github.com/paritytech/substrate.git'
+git = 'https://github.com/akropolisio/substrate.git'
 rev = '03e786669d0556ba44c889e1ee141dbb0dfaa9e2'
 
 [dependencies.substrate-service]
-git = 'https://github.com/paritytech/substrate.git'
+git = 'https://github.com/akropolisio/substrate.git'
 rev = '03e786669d0556ba44c889e1ee141dbb0dfaa9e2'
 
 [dependencies.transaction-pool]
-git = 'https://github.com/paritytech/substrate.git'
+git = 'https://github.com/akropolisio/substrate.git'
 package = 'substrate-transaction-pool'
 rev = '03e786669d0556ba44c889e1ee141dbb0dfaa9e2'
