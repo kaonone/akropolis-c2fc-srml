@@ -29,18 +29,17 @@ git = 'https://github.com/paritytech/substrate.git'
 package = 'srml-aura'
 rev = '03e786669d0556ba44c889e1ee141dbb0dfaa9e2'
 
-# temporarily disable the grandpa (issue #2834)
-# [dependencies.grandpa]
-# default_features = false
-# git = 'https://github.com/paritytech/substrate.git'
-# package = 'srml-grandpa'
-# rev = '03e786669d0556ba44c889e1ee141dbb0dfaa9e2'
+[dependencies.grandpa]
+default_features = false
+git = 'https://github.com/paritytech/substrate.git'
+package = 'srml-grandpa'
+rev = '03e786669d0556ba44c889e1ee141dbb0dfaa9e2'
 
-# [dependencies.finality-tracker]
-# default_features = false
-# git = 'https://github.com/paritytech/substrate.git'
-# package = 'srml-finality-tracker'
-# rev = '03e786669d0556ba44c889e1ee141dbb0dfaa9e2'
+[dependencies.finality-tracker]
+default_features = false
+git = 'https://github.com/paritytech/substrate.git'
+package = 'srml-finality-tracker'
+rev = '03e786669d0556ba44c889e1ee141dbb0dfaa9e2'
 
 [dependencies.balances]
 default_features = false
@@ -54,17 +53,17 @@ git = 'https://github.com/paritytech/substrate.git'
 package = 'srml-assets'
 rev = '03e786669d0556ba44c889e1ee141dbb0dfaa9e2'
 
-# [dependencies.session]
-# default_features = false
-# git = 'https://github.com/paritytech/substrate.git'
-# package = 'srml-session'
-# rev = '03e786669d0556ba44c889e1ee141dbb0dfaa9e2'
+[dependencies.session]
+default_features = false
+git = 'https://github.com/paritytech/substrate.git'
+package = 'srml-session'
+rev = '03e786669d0556ba44c889e1ee141dbb0dfaa9e2'
 
-# [dependencies.staking]
-# default_features = false
-# git = 'https://github.com/paritytech/substrate.git'
-# package = 'srml-staking'
-# rev = '03e786669d0556ba44c889e1ee141dbb0dfaa9e2'
+[dependencies.staking]
+default_features = false
+git = 'https://github.com/paritytech/substrate.git'
+package = 'srml-staking'
+rev = '03e786669d0556ba44c889e1ee141dbb0dfaa9e2'
 
 [dependencies.treasury]
 default_features = false
@@ -192,8 +191,8 @@ std = [
     'version/std',
     'balances/std',
     'assets/std',
-   #  'session/std',
-   #  'staking/std',
+    'session/std',
+    'staking/std',
     'treasury/std',
     'indices/std',
     'timestamp/std',
@@ -204,6 +203,6 @@ std = [
     'aura/std',
     'consensus-aura/std',
     # temporarily disable the grandpa (issue #2834)
-    # "grandpa/std",
-    # "finality-tracker/std",
+    "grandpa/std",
+    "finality-tracker/std",
 ]

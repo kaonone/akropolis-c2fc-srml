@@ -12,18 +12,13 @@ use rstd::prelude::*;
 #[cfg(feature = "std")]
 use primitives::bytes;
 use primitives::{ed25519, sr25519, OpaqueMetadata};
-use runtime_primitives::{
-	ApplyResult, transaction_validity::TransactionValidity, generic, create_runtime_str,
-	traits::{self, NumberFor, BlakeTwo256, Block as BlockT, DigestFor, StaticLookup, Verify}
-};
+use runtime_primitives::{ApplyResult, transaction_validity::TransactionValidity, generic, create_runtime_str};
+use runtime_primitives::traits::{self, NumberFor, BlakeTwo256, Block as BlockT, DigestFor, StaticLookup, Verify};
+use grandpa::fg_primitives::{self, ScheduledChange};
 
-use client::{
-	block_builder::api::{CheckInherentsResult, InherentData, self as block_builder_api},
-	runtime_api, impl_runtime_apis
-};
+use client::{block_builder::api::{CheckInherentsResult, InherentData, self as block_builder_api},
+         runtime_api, impl_runtime_apis};
 
-// temporarily disable the grandpa (issue #2834)
-// use grandpa::fg_primitives::{self, ScheduledChange};
 
 use version::RuntimeVersion;
 #[cfg(feature = "std")]
@@ -36,8 +31,16 @@ pub use consensus::Call as ConsensusCall;
 pub use timestamp::Call as TimestampCall;
 pub use balances::Call as BalancesCall;
 pub use runtime_primitives::{Permill, Perbill};
-pub use timestamp::BlockPeriod;
 pub use support::{StorageValue, construct_runtime};
+pub use timestamp::BlockPeriod;
+pub use staking::StakerStatus;
+
+
+/// Alias to the signature scheme used for Aura authority signatures.
+pub type AuraSignature = ed25519::Signature;
+
+/// The Ed25519 pub key of an session that belongs to an Aura authority of the chain.
+pub type AuraId = ed25519::Public;
 
 /// The type that is used for identifying authorities.
 pub type AuthorityId = <AuthoritySignature as Verify>::Signer;
@@ -51,6 +54,10 @@ pub type AccountId = <AccountSignature as Verify>::Signer;
 /// The type used by authorities to prove their ID.
 pub type AccountSignature = sr25519::Signature;
 
+/// The type for looking up accounts.
+/// We don't expect more than 4 billion of them, but you never know...
+pub type AccountIndex = u32;
+
 /// A hash of some data used by the chain.
 pub type Hash = primitives::H256;
 
@@ -59,6 +66,10 @@ pub type BlockNumber = u64;
 
 /// Index of an account's extrinsic in the chain.
 pub type Nonce = u64;
+
+/// Balance of an account.
+pub type Balance = u128;
+
 
 mod c2fc;
 mod stake;
@@ -81,9 +92,7 @@ pub mod opaque {
 		}
 	}
 	impl traits::Extrinsic for UncheckedExtrinsic {
-		fn is_signed(&self) -> Option<bool> {
-			None
-		}
+		fn is_signed(&self) -> Option<bool> { None }
 	}
 	/// Opaque block header type.
 	pub type Header =
@@ -93,29 +102,26 @@ pub mod opaque {
 	/// Opaque block identifier type.
 	pub type BlockId = generic::BlockId<Block>;
 	/// Opaque session key type.
-	pub type SessionKey = AuthorityId;
+	// pub type SessionKey = AuthorityId;
+	pub type SessionKey = AuraId;
 
 	// / Opaque AssetId key type.
 	// pub type AssetId = u32; // assets::AssetId;
 }
 
 /// This runtime version.
-pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: create_runtime_str!("akropolis"),
-	impl_name: create_runtime_str!("akropolis"),
-	authoring_version: 3,
-	spec_version: 4,
-	impl_version: 4,
-	apis: RUNTIME_API_VERSIONS,
-};
+pub const VERSION: RuntimeVersion = RuntimeVersion { spec_name: create_runtime_str!("akropolis"),
+                                                     impl_name: create_runtime_str!("akropolis"),
+                                                     authoring_version: 3,
+                                                     spec_version: 4,
+                                                     impl_version: 4,
+                                                     apis: RUNTIME_API_VERSIONS };
 
 /// The version infromation used to identify this runtime when compiled natively.
 #[cfg(feature = "std")]
 pub fn native_version() -> NativeVersion {
-	NativeVersion {
-		runtime_version: VERSION,
-		can_author_with: Default::default(),
-	}
+	NativeVersion { runtime_version: VERSION,
+	                can_author_with: Default::default() }
 }
 
 impl system::Trait for Runtime {
@@ -144,8 +150,9 @@ impl system::Trait for Runtime {
 }
 
 impl aura::Trait for Runtime {
-	type HandleReport = ();
-	// TODO: type HandleReport = aura::StakingSlasher<Runtime>;
+	// type HandleReport = ();
+	type HandleReport = aura::StakingSlasher<Runtime>;
+	// type AuthorityId = AuraId;
 }
 
 impl consensus::Trait for Runtime {
@@ -161,7 +168,7 @@ impl consensus::Trait for Runtime {
 impl indices::Trait for Runtime {
 	/// The type for recording indexing into the account enumeration. If this ever overflows, there
 	/// will be problems!
-	type AccountIndex = u32;
+	type AccountIndex = AccountIndex;
 	/// Use the standard means of resolving an index hint from an id.
 	type ResolveHint = indices::SimpleResolveHint<Self::AccountId, Self::AccountIndex>;
 	/// Determine whether an account is dead.
@@ -178,10 +185,10 @@ impl timestamp::Trait for Runtime {
 
 impl balances::Trait for Runtime {
 	/// The type for recording an account's balance.
-	type Balance = u128;
+	type Balance = Balance;
 	/// What to do if an account's free balance gets zeroed.
-	type OnFreeBalanceZero = ();
-	// TODO: type OnFreeBalanceZero = ((Staking, Contract), Session);
+	// type OnFreeBalanceZero = ();
+	type OnFreeBalanceZero = (Staking, Session);
 	/// What to do if a new account is created.
 	type OnNewAccount = Indices;
 	/// The ubiquitous event type.
@@ -198,7 +205,24 @@ impl balances::Trait for Runtime {
 // 	type Balance = <Runtime as balances::Trait>::Balance;
 // }
 
-/*
+impl session::Trait for Runtime {
+	type ConvertAccountIdToSessionKey = ();
+	type OnSessionChange = (Staking, grandpa::SyncedAuthorities<Runtime>);
+	type Event = Event;
+}
+
+impl staking::Trait for Runtime {
+	type Currency = balances::Module<Self>;
+	// breaking changes:
+	// TODO: type CurrencyToVote = CurrencyToVoteHandler;
+	type CurrencyToVote = ();
+	type OnRewardMinted = ();
+	type Event = Event;
+	type Slash = ();
+	type Reward = ();
+}
+
+
 impl grandpa::Trait for Runtime {
 	type SessionKey = AuthorityId;
 	type Log = Log;
@@ -210,7 +234,7 @@ impl grandpa::Trait for Runtime {
 impl finality_tracker::Trait for Runtime {
 	type OnFinalizationStalled = grandpa::SyncedAuthorities<Runtime>;
 }
-*/
+
 
 impl sudo::Trait for Runtime {
 	/// The ubiquitous event type.
@@ -256,11 +280,11 @@ construct_runtime!(
 		Balances: balances,
 		// Assets: assets::{Module, Event<T>, AssetId},
 		// Assets: assets::{Module, Call, Storage, Event<T>, AssetId},
-		// TODO: Staking: staking,
 		// TODO: Treasury: treasury,
-		// XXX: temporarily disable the grandpa (issue #2834)
-		// FinalityTracker: finality_tracker::{Module, Call, Inherent},
-		// Grandpa: grandpa::{Module, Call, Storage, Config<T>, Log(), Event<T>},
+		Session: session,
+		Staking: staking::{default, OfflineWorker},
+		FinalityTracker: finality_tracker::{Module, Call, Inherent},
+		Grandpa: grandpa::{Module, Call, Storage, Config<T>, Log(), Event<T>},
 		Sudo: sudo,
 		// C2FC:
 		Cashflow: c2fc::{Module, Call, Storage, Event<T>, Bucket},
@@ -287,7 +311,6 @@ pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, Nonce, Call>;
 pub type Executive = executive::Executive<Runtime, Block, Context, Balances, Runtime, AllModules>;
 
 
-
 // Implement our runtime API endpoints. This is just a bunch of proxying.
 impl_runtime_apis! {
 	impl runtime_api::Core<Block> for Runtime {
@@ -302,10 +325,6 @@ impl_runtime_apis! {
 		fn initialize_block(header: &<Block as BlockT>::Header) {
 			Executive::initialize_block(header)
 		}
-
-		// fn authorities() -> Vec<AuthorityId> {
-		// 	panic!("Deprecated, please use `AuthoritiesApi`.")
-		// }
 	}
 
 	impl runtime_api::Metadata<Block> for Runtime {
@@ -360,7 +379,7 @@ impl_runtime_apis! {
 		}
 	}
 
-	/*
+
 	impl fg_primitives::GrandpaApi<Block> for Runtime {
 		fn grandpa_pending_change(digest: &DigestFor<Block>) -> Option<ScheduledChange<NumberFor<Block>>> {
 			for log in digest.logs.iter().filter_map(|l| match l {
@@ -390,5 +409,5 @@ impl_runtime_apis! {
 			Grandpa::grandpa_authorities()
 		}
 	}
-	*/
+
 }
