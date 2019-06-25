@@ -41,56 +41,56 @@ path = 'runtime'
 
 
 [dependencies.basic-authorship]
-git = 'https://github.com/akropolisio/substrate.git'
+git = 'https://github.com/paritytech/substrate.git'
 package = 'substrate-basic-authorship'
 
 
 [dependencies.consensus]
-git = 'https://github.com/akropolisio/substrate.git'
+git = 'https://github.com/paritytech/substrate.git'
 package = 'substrate-consensus-aura'
 
 
 [dependencies.inherents]
-git = 'https://github.com/akropolisio/substrate.git'
+git = 'https://github.com/paritytech/substrate.git'
 package = 'substrate-inherents'
 
 
 [dependencies.network]
-git = 'https://github.com/akropolisio/substrate.git'
+git = 'https://github.com/paritytech/substrate.git'
 package = 'substrate-network'
 
 
 [dependencies.telemetry]
-git = 'https://github.com/akropolisio/substrate.git'
+git = 'https://github.com/paritytech/substrate.git'
 package = 'substrate-telemetry'
 
 
 [dependencies.primitives]
-git = 'https://github.com/akropolisio/substrate.git'
+git = 'https://github.com/paritytech/substrate.git'
 package = 'substrate-primitives'
 
 
 [dependencies.sr-io]
-git = 'https://github.com/akropolisio/substrate.git'
+git = 'https://github.com/paritytech/substrate.git'
 
 
 [dependencies.substrate-cli]
-git = 'https://github.com/akropolisio/substrate.git'
+git = 'https://github.com/paritytech/substrate.git'
 
 
 [dependencies.substrate-client]
-git = 'https://github.com/akropolisio/substrate.git'
+git = 'https://github.com/paritytech/substrate.git'
 
 
 [dependencies.substrate-executor]
-git = 'https://github.com/akropolisio/substrate.git'
+git = 'https://github.com/paritytech/substrate.git'
 
 
 [dependencies.substrate-service]
-git = 'https://github.com/akropolisio/substrate.git'
+git = 'https://github.com/paritytech/substrate.git'
 
 
 [dependencies.transaction-pool]
-git = 'https://github.com/akropolisio/substrate.git'
+git = 'https://github.com/paritytech/substrate.git'
 package = 'substrate-transaction-pool'
 
