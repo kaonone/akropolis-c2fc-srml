@@ -43,54 +43,54 @@ path = 'runtime'
 [dependencies.basic-authorship]
 git = 'https://github.com/akropolisio/substrate.git'
 package = 'substrate-basic-authorship'
-rev = '3366a989f4a9f19f751d1dac42e7743daf3dc205'
+
 
 [dependencies.consensus]
 git = 'https://github.com/akropolisio/substrate.git'
 package = 'substrate-consensus-aura'
-rev = '3366a989f4a9f19f751d1dac42e7743daf3dc205'
+
 
 [dependencies.inherents]
 git = 'https://github.com/akropolisio/substrate.git'
 package = 'substrate-inherents'
-rev = '3366a989f4a9f19f751d1dac42e7743daf3dc205'
+
 
 [dependencies.network]
 git = 'https://github.com/akropolisio/substrate.git'
 package = 'substrate-network'
-rev = '3366a989f4a9f19f751d1dac42e7743daf3dc205'
+
 
 [dependencies.telemetry]
 git = 'https://github.com/akropolisio/substrate.git'
 package = 'substrate-telemetry'
-rev = '3366a989f4a9f19f751d1dac42e7743daf3dc205'
+
 
 [dependencies.primitives]
 git = 'https://github.com/akropolisio/substrate.git'
 package = 'substrate-primitives'
-rev = '3366a989f4a9f19f751d1dac42e7743daf3dc205'
+
 
 [dependencies.sr-io]
 git = 'https://github.com/akropolisio/substrate.git'
-rev = '3366a989f4a9f19f751d1dac42e7743daf3dc205'
+
 
 [dependencies.substrate-cli]
 git = 'https://github.com/akropolisio/substrate.git'
-rev = '3366a989f4a9f19f751d1dac42e7743daf3dc205'
+
 
 [dependencies.substrate-client]
 git = 'https://github.com/akropolisio/substrate.git'
-rev = '3366a989f4a9f19f751d1dac42e7743daf3dc205'
+
 
 [dependencies.substrate-executor]
 git = 'https://github.com/akropolisio/substrate.git'
-rev = '3366a989f4a9f19f751d1dac42e7743daf3dc205'
+
 
 [dependencies.substrate-service]
 git = 'https://github.com/akropolisio/substrate.git'
-rev = '3366a989f4a9f19f751d1dac42e7743daf3dc205'
+
 
 [dependencies.transaction-pool]
 git = 'https://github.com/akropolisio/substrate.git'
 package = 'substrate-transaction-pool'
-rev = '3366a989f4a9f19f751d1dac42e7743daf3dc205'
+
