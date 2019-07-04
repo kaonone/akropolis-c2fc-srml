@@ -308,7 +308,8 @@ pub type UncheckedExtrinsic = generic::UncheckedMortalCompactExtrinsic<Address, 
 /// Extrinsic type that has already been checked.
 pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, Nonce, Call>;
 /// Executive: handles dispatch to the various modules.
-pub type Executive = executive::Executive<Runtime, Block, Context, Balances, Runtime, AllModules>;
+//pub type Executive = executive::Executive<Runtime, Block, Context, Balances, Runtime, AllModules>;
+pub type Executive = executive::Executive<Runtime, Block, Context, Balances, AllModules>;
 
 
 // Implement our runtime API endpoints. This is just a bunch of proxying.
@@ -325,6 +326,10 @@ impl_runtime_apis! {
 		fn initialize_block(header: &<Block as BlockT>::Header) {
 			Executive::initialize_block(header)
 		}
+
+        fn authorities() -> Vec<AuthorityId> {
+            panic!("Deprecated, please use `AuthoritiesApi`.")
+        }
 	}
 
 	impl runtime_api::Metadata<Block> for Runtime {

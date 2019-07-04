@@ -154,7 +154,6 @@ impl Alternative {
 	}
 }
 
-
 fn testnet_genesis(initial_authorities: Vec<(AccountId, AccountId, AuthorityId)>,
                    endowed_accounts: Vec<AccountId>, root_key: AccountId)
                    -> GenesisConfig
