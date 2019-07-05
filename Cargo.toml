@@ -30,67 +30,65 @@ parking_lot = "0.8.0"
 parity-codec = "3.5" #3.3
 trie-root = "0.12.2"
 
-
 [workspace]
 members = [ "runtime" ]
 exclude = [ "runtime/wasm" ]
 
-
 [dependencies.akropolis-runtime]
 path = 'runtime'
-
 
 [dependencies.basic-authorship]
 git = 'https://github.com/paritytech/substrate.git'
 package = 'substrate-basic-authorship'
-
+rev = '2f1b89f4b2f969917117a6bcecb14f361bf1c776'
 
 [dependencies.consensus]
 git = 'https://github.com/paritytech/substrate.git'
 package = 'substrate-consensus-aura'
-
+rev = '2f1b89f4b2f969917117a6bcecb14f361bf1c776'
 
 [dependencies.inherents]
 git = 'https://github.com/paritytech/substrate.git'
 package = 'substrate-inherents'
-
+rev = '2f1b89f4b2f969917117a6bcecb14f361bf1c776'
 
 [dependencies.network]
 git = 'https://github.com/paritytech/substrate.git'
 package = 'substrate-network'
-
+rev = '2f1b89f4b2f969917117a6bcecb14f361bf1c776'
 
 [dependencies.telemetry]
 git = 'https://github.com/paritytech/substrate.git'
 package = 'substrate-telemetry'
-
+rev = '2f1b89f4b2f969917117a6bcecb14f361bf1c776'
 
 [dependencies.primitives]
 git = 'https://github.com/paritytech/substrate.git'
 package = 'substrate-primitives'
-
+rev = '2f1b89f4b2f969917117a6bcecb14f361bf1c776'
 
 [dependencies.sr-io]
 git = 'https://github.com/paritytech/substrate.git'
-
+rev = '2f1b89f4b2f969917117a6bcecb14f361bf1c776'
 
 [dependencies.substrate-cli]
 git = 'https://github.com/paritytech/substrate.git'
-
+rev = '2f1b89f4b2f969917117a6bcecb14f361bf1c776'
 
 [dependencies.substrate-client]
 git = 'https://github.com/paritytech/substrate.git'
-
+rev = '2f1b89f4b2f969917117a6bcecb14f361bf1c776'
 
 [dependencies.substrate-executor]
 git = 'https://github.com/paritytech/substrate.git'
-
+rev = '2f1b89f4b2f969917117a6bcecb14f361bf1c776'
 
 [dependencies.substrate-service]
 git = 'https://github.com/paritytech/substrate.git'
-
+rev = '2f1b89f4b2f969917117a6bcecb14f361bf1c776'
 
 [dependencies.transaction-pool]
 git = 'https://github.com/paritytech/substrate.git'
 package = 'substrate-transaction-pool'
+rev = '2f1b89f4b2f969917117a6bcecb14f361bf1c776'
 

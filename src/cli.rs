@@ -18,7 +18,7 @@ pub fn run<I, T, E>(args: I, exit: E, version: VersionInfo) -> error::Result<()>
 {
 	parse_and_execute::<service::Factory, NoCustom, NoCustom, _, _, _, _, _>(
 		load_spec, &version, NODE_NAME_TEL, args, exit,
-	 	|exit, _cli_args, _custom_args, config| {
+	 	|exit, _custom_args, config| {
 			info!("{}", version.name);
 			info!("  version {}", config.full_version());
 			info!("  by {}, 2019", version.author);
@@ -62,11 +62,8 @@ fn run_until_exit<T, C, E>(
 {
 	let (exit_send, exit) = exit_future::signal();
 
-	// let executor = runtime.executor();
-	// informant::start(&service, exit.clone(), executor.clone());
-
-	let informant = informant::build(&service);
-	runtime.executor().spawn(exit.until(informant).map(|_| ()));
+	let executor = runtime.executor();
+	informant::start(&service, exit.clone(), executor.clone());
 
 	let _ = runtime.block_on(e.into_exit());
 	exit_send.fire();
