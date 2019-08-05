@@ -4,6 +4,8 @@ authors = ['Akropolis <admin@akropolis.io>']
 edition = '2018'
 version = '0.8.2'
 
+[dependencies]
+hex-literal = '0.2'
 
 [dependencies.rustc-hex]
 optional = true
